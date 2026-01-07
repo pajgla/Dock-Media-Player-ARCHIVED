@@ -1,0 +1,8 @@
+{
+  "name": "Dock Player",
+  "description": "Animated media player for the dock",
+  "uuid": "dock-player@pajgla.com",
+  "shell-version": [
+    "49"
+  ]
+}
