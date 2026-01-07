@@ -69,24 +69,12 @@ export default class DockMediaPlayerExtension extends Extension
 
     disable()
     {
-        if (this.dashToDockElement)
-        {
-            //this.dashToDockElement.dash._box.remove_child(this.dashContainer);
-            //this.dashToDockElement = null;
-
-            this.dashContainer.ease({
-                width: 0,
-                opacity: 0,
-                duration: 300,
-                mode: Clutter.AnimationMode.EASE_IN_QUAD,
-                onComplete: () => {
-                    if (this.dashContainer.get_parent()) {
-                        this.dashContainer.get_parent().remove_child(this.dashContainer);
-                    }
-                    this.dashContainer = null;
+        this.collapseDashMediaContainer(() => {
+                if (this.dashContainer.get_parent()) {
+                    this.dashContainer.get_parent().remove_child(this.dashContainer);
                 }
-            });
-        }
+                this.dashContainer = null;
+            })
     }
 
     attachMediaWidget(dashToDock)
@@ -95,13 +83,22 @@ export default class DockMediaPlayerExtension extends Extension
 
         const dash = dashToDock.dash;
         dash._box.add_child(this.dashContainer);
+        this.expandDashMediaContainer();
+    }
 
-        const [minWidth, naturalWidth] = this.dashContainer.get_preferred_width(-1);
+    expandDashMediaContainer()
+    {
+        if (this.dashContainer === null)
+        {
+            console.warn("Dash media container is not initialized.");
+            return;
+        }
+
+        const [_, naturalWidth] = this.dashContainer.get_preferred_width(-1);
 
         this.dashContainer.set_width(0);
         this.dashContainer.set_opacity(0);
 
-    // Use GLib.idle_add to ensure the widget is fully laid out
         GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             this.dashContainer.ease({
                 width: naturalWidth,
@@ -110,6 +107,23 @@ export default class DockMediaPlayerExtension extends Extension
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
             });
             return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    collapseDashMediaContainer(callback)
+    {
+        if (this.dashContainer === null)
+        {
+            console.warn("Dash media container is not initialized.");
+            return;
+        }
+
+        this.dashContainer.ease({
+            width: 0,
+            opacity: 0,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_IN_QUAD,
+            onComplete: callback,
         });
     }
 }
