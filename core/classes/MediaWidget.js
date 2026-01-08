@@ -90,7 +90,7 @@ export const MediaWidget = GObject.registerClass(
             });
 
             this.previousIcon = new St.Icon({
-                style_class: "music-previous-icon",
+                style_class: "music-next-icon",
                 icon_name: "media-skip-backward-symbolic",
                 y_align: Clutter.ActorAlign.CENTER,
             })

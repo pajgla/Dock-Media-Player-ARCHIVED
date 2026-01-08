@@ -22,8 +22,9 @@ import St from "gi://St";
 import GLib from "gi://GLib";
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { MediaWidget } from "./core/classes/MediaWidget.js";
-import { MediaMonitor } from "./core/classes/MediaMonitor.js";
 import Clutter from 'gi://Clutter';
+import { MediaWatcher } from "./core/classes/MediaWatcher.js";
+
 
 const DashContainer = GObject.registerClass(
     class DashContainer extends St.BoxLayout {
@@ -46,6 +47,26 @@ export default class DockMediaPlayerExtension extends Extension
     enable()
     {
         this.dashContainer = new DashContainer();
+        this._isVisible = false;
+        this._currentStatus = 'expanded';
+        this._mediaWatcher = new MediaWatcher((busName, newStatus) => {
+            if (newStatus === 'Playing' || newStatus === 'Paused')
+            {
+                if (this._currentStatus !== 'expanded')
+                    this.expandDashMediaContainer();
+            }
+            else
+            {
+                if (this._currentStatus !== 'collapsed')
+                {
+                    this.collapseDashMediaContainer(() => {});
+                }
+            }
+
+            Main.notify('Media Status Changed', `New status: ${newStatus}`);
+        });
+        this._mediaWatcher.watchPlayers();
+        
 
         const existingDash = Main.uiGroup.get_children().find(
             actor => actor.get_name() === 'dashtodockContainer' && actor.constructor.name === 'DashToDock'
@@ -74,7 +95,10 @@ export default class DockMediaPlayerExtension extends Extension
                     this.dashContainer.get_parent().remove_child(this.dashContainer);
                 }
                 this.dashContainer = null;
-            })
+        });
+
+        this._mediaWatcher.destroy();
+        this._mediaWatcher = null;
     }
 
     attachMediaWidget(dashToDock)
@@ -83,28 +107,38 @@ export default class DockMediaPlayerExtension extends Extension
 
         const dash = dashToDock.dash;
         dash._box.add_child(this.dashContainer);
-        this.expandDashMediaContainer();
+        this.collapseDashMediaContainer(() => {});
     }
 
     expandDashMediaContainer()
     {
-        if (this.dashContainer === null)
-        {
-            console.warn("Dash media container is not initialized.");
-            return;
-        }
+        if (this.dashContainer === null) return;
 
-        const [_, naturalWidth] = this.dashContainer.get_preferred_width(-1);
+        this._currentStatus = 'expanded';
 
+        // 1. Reset width to -1 so the layout engine can calculate the actual size
+        this.dashContainer.set_width(-1);
+        
+        // 2. Get the width the widget WANTS to be
+        const [minWidth, naturalWidth] = this.dashContainer.get_preferred_width(-1);
+        
+        // If it still returns 0, give it a fallback so it doesn't stay invisible
+        const targetWidth = naturalWidth > 0 ? naturalWidth : 200;
+
+        // 3. Set it back to 0 immediately so we can animate from 0
         this.dashContainer.set_width(0);
         this.dashContainer.set_opacity(0);
 
         GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
             this.dashContainer.ease({
-                width: naturalWidth,
+                width: targetWidth,
                 opacity: 255,
                 duration: 300,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
+                onComplete: () => {
+                    // Lock the width after expansion so collapse knows where to start from
+                    this.dashContainer.set_width(targetWidth);
+                }
             });
             return GLib.SOURCE_REMOVE;
         });
@@ -115,15 +149,25 @@ export default class DockMediaPlayerExtension extends Extension
         if (this.dashContainer === null)
         {
             console.warn("Dash media container is not initialized.");
+            if (callback) callback();
             return;
         }
 
-        this.dashContainer.ease({
-            width: 0,
-            opacity: 0,
-            duration: 300,
-            mode: Clutter.AnimationMode.EASE_IN_QUAD,
-            onComplete: callback,
+        this._currentStatus = 'collapsed';
+
+        // Get the current width first
+        const currentWidth = this.dashContainer.width;
+
+        // Defer the animation just like expand does
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this.dashContainer.ease({
+                width: 0,
+                opacity: 0,
+                duration: 300,
+                mode: Clutter.AnimationMode.EASE_IN_QUAD,
+                onComplete: callback,
+            });
+            return GLib.SOURCE_REMOVE;
         });
     }
 }
