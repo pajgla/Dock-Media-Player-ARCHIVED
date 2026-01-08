@@ -1,38 +1,46 @@
 .media-player-widget {
-    padding: 12px;
-    spacing: 16px;
+    padding: 8px 12px;
+    spacing: 12px;
     background-color: rgba(30, 30, 30, 0.9);
     border-radius: 12px;
-    /* REMOVE: width: 320px; */
-    /* REMOVE: max-width: 400px; */
+}
+
+.dash-media-player {
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
 .media-album-art {
-    width: 80px;  /* Made art bigger */
-    height: 80px;
     border-radius: 8px;
 }
 
 .media-metadata {
     spacing: 2px;
-    /* Remove align-items and x-expand to let the labels control the width */
+    margin-right: 8px;
+    /* This ensures the box itself stays centered if the widget height changes */
+    vertical-align: middle; 
 }
 
 .media-music-title {
     font-weight: bold;
-    font-size: 15px; /* Slightly smaller to fit more text */
+    font-size: 12px; /* Slightly smaller to fit more text */
     color: white;
 }
 .media-music-artist {
-    font-size: 12px;
+    font-size: 10px;
     color: #cccccc;
 }
-/* Controls Box */
+
+.media-music-title,
+.media-music-artist {
+    y-align: middle;
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
 .media-controls {
-    spacing: 12px; /* Add some nice breathing room between buttons */
-    padding-top: 8px; /* Push buttons slightly away from the artist name */
-    /* Ensure no extra margins are pushing it right */
-    margin-left: 0px; 
+    spacing: 4px; 
+    y_align: center;
 }
 
 /* Make buttons feel a bit bigger/easier to click while keeping icons small */
@@ -52,5 +60,5 @@
 .media-play-pause-button StIcon,
 .music-next-button StIcon,
 .music-previous-button StIcon {
-    icon-size: 14px; /* Small, sleek icons */
+    icon-size: 10px; /* Small, sleek icons */
 }

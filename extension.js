@@ -33,7 +33,8 @@ const DashContainer = GObject.registerClass(
                 style_class: "dash-media-player",
                 vertical: true,
                 x_expand: true,
-                y_expand: true,
+                y_expand: false,
+                y_align: Clutter.ActorAlign.CENTER,
             });
 
             this.mediaPlayerWidget = new MediaWidget();
@@ -116,6 +117,30 @@ export default class DockMediaPlayerExtension extends Extension
         this.dashToDockElement = dashToDock;
 
         const dash = dashToDock.dash;
+        
+        // Get the actual dock height and calculate widget size
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            let [minHeight, naturalHeight] = dash._box.get_preferred_height(-1);
+            
+            // Make our widget 80% of the dock height (changed from 90%)
+            let targetHeight = Math.floor(naturalHeight * 0.80);
+            
+            // Set the height on both containers
+            this.dashContainer.set_height(targetHeight);
+            this.dashContainer.mediaPlayerWidget.set_height(targetHeight);
+            
+            // Also update the metadata height to match (minus padding)
+            let metadataHeight = targetHeight - 24; // Subtract padding
+            //this.dashContainer.mediaPlayerWidget._musicMetadata.set_height(metadataHeight);
+            
+            // Set album art to match metadata height
+            let artSize = metadataHeight;
+            this.dashContainer.mediaPlayerWidget._musicAlbumArt.set_width(artSize);
+            this.dashContainer.mediaPlayerWidget._musicAlbumArt.set_height(artSize);
+            
+            return GLib.SOURCE_REMOVE;
+        });
+        
         dash._box.add_child(this.dashContainer);
         this.collapseDashMediaContainer(() => {});
     }

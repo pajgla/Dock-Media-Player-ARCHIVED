@@ -14,14 +14,14 @@ export const MediaWidget = GObject.registerClass(
                 style_class: "media-player-widget",
                 vertical: false,
                 x_expand: false,
-                y_expand: true,
+                y_expand: false,
             });
 
             this._musicMetadata = new St.BoxLayout({
                 style_class: "media-metadata",
                 vertical: true,
                 x_expand: true,
-                y_expand: true,
+                y_expand: false,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -32,7 +32,7 @@ export const MediaWidget = GObject.registerClass(
                 x_expand: false,
                 y_expand: true,
                 // Change this from END to START
-                x_align: Clutter.ActorAlign.START, 
+                x_align: Clutter.ActorAlign.END, 
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -71,6 +71,8 @@ export const MediaWidget = GObject.registerClass(
             this._musicTitle.clutter_text.min_width = 50; 
             // This forces a maximum width so YouTube titles don't make the widget huge
             this._musicTitle.clutter_text.max_width = 50;
+            this._musicTitle.y_align = Clutter.ActorAlign.CENTER;
+            this._musicArtist.y_align = Clutter.ActorAlign.CENTER;
 
             this._musicAlbumArt = new St.Bin({
                 style_class: "music-album-art",
@@ -81,7 +83,7 @@ export const MediaWidget = GObject.registerClass(
             this._musicAlbumArtFallback = new St.Icon({
                 style_class: "music-album-art-fallback",
                 icon_name: "audio-x-generic-symbolic",
-                icon_size: 80,  // Add this!
+                icon_size: 5,  // Add this!
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -111,12 +113,12 @@ export const MediaWidget = GObject.registerClass(
 
             this._musicMetadata.add_child(this._musicTitle);
             this._musicMetadata.add_child(this._musicArtist);
-            this._musicMetadata.add_child(this._musicControls);
+            //this._musicMetadata.add_child(this._musicControls);
             this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
 
+            this._musicControls.add_child(this._previousButton);
             this._musicControls.add_child(this._playPauseButton);
             this._musicControls.add_child(this._nextButton);
-            this._musicControls.add_child(this._previousButton);
 
             this._previousButton.set_child(this.previousIcon);
             this._playPauseButton.set_child(this.playIcon);
@@ -136,7 +138,7 @@ export const MediaWidget = GObject.registerClass(
 
             this.add_child(this._musicAlbumArt);
             this.add_child(this._musicMetadata);
-            //this.add_child(this._musicControls);
+            this.add_child(this._musicControls);
             this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
         }
 
@@ -174,7 +176,7 @@ export const MediaWidget = GObject.registerClass(
                 const fileIcon = new Gio.FileIcon({ file: file });
                 const icon = new St.Icon({
                     gicon: fileIcon,
-                    icon_size: 80,
+                    icon_size: 5,
                     y_align: Clutter.ActorAlign.CENTER,
                 });
 
