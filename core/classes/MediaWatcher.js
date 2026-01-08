@@ -97,7 +97,8 @@ export const MediaWatcher = class MediaWatcher {
 
         let trackInfo = {
             title: "Unknown Title",
-            artist: "Unknown Artist"
+            artist: "Unknown Artist",
+            artUrl: null,
         };
 
         // Get the Metadata property variant
@@ -118,6 +119,10 @@ export const MediaWatcher = class MediaWatcher {
                 const artist = unpacked['xesam:artist'];
                 // Since xesam:artist is a List of Strings
                 trackInfo.artist = Array.isArray(artist) ? artist.join(', ') : String(artist);
+            }
+
+            if (unpacked['mpris:artUrl']) {
+                trackInfo.artUrl = String(unpacked['mpris:artUrl']);
             }
         }
 

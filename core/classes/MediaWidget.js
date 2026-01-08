@@ -2,6 +2,8 @@ import GObject from "gi://GObject";
 import St from "gi://St";
 import Clutter from "gi://Clutter";
 import Pango from 'gi://Pango';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
 
 export const MediaWidget = GObject.registerClass(
     class MediaWidget extends St.BoxLayout
@@ -79,6 +81,7 @@ export const MediaWidget = GObject.registerClass(
             this._musicAlbumArtFallback = new St.Icon({
                 style_class: "music-album-art-fallback",
                 icon_name: "audio-x-generic-symbolic",
+                icon_size: 80,  // Add this!
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -134,6 +137,7 @@ export const MediaWidget = GObject.registerClass(
             this.add_child(this._musicAlbumArt);
             this.add_child(this._musicMetadata);
             //this.add_child(this._musicControls);
+            this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
         }
 
         updateUI(metadata, status) {
@@ -141,10 +145,43 @@ export const MediaWidget = GObject.registerClass(
             this._musicTitle.set_text(String(metadata.title || "Unknown Title"));
             this._musicArtist.set_text(String(metadata.artist || "Unknown Artist"));
 
+            if (metadata.artUrl) {
+                this._loadAlbumArt(metadata.artUrl);
+            } else {
+                // Show fallback icon if no art URL
+                this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
+            }
+
             if (status === 'Playing') {
                 this._playPauseButton.set_child(this.pauseIcon);
             } else {
                 this._playPauseButton.set_child(this.playIcon);
+            }
+        }
+
+        _loadAlbumArt(artUrl) {
+            try {
+                let file;
+                
+                if (artUrl.startsWith('file://')) {
+                    file = Gio.File.new_for_uri(artUrl);
+                } else if (artUrl.startsWith('http://') || artUrl.startsWith('https://')) {
+                    file = Gio.File.new_for_uri(artUrl);
+                } else {
+                    file = Gio.File.new_for_path(artUrl);
+                }
+
+                const fileIcon = new Gio.FileIcon({ file: file });
+                const icon = new St.Icon({
+                    gicon: fileIcon,
+                    icon_size: 80,
+                    y_align: Clutter.ActorAlign.CENTER,
+                });
+
+                this._musicAlbumArt.set_child(icon);
+            } catch (e) {
+                logError(e, 'Failed to load album art');
+                this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
             }
         }
     }
