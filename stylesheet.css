@@ -1,0 +1,56 @@
+.media-player-widget {
+    padding: 12px;
+    spacing: 16px;
+    background-color: rgba(30, 30, 30, 0.9);
+    border-radius: 12px;
+    /* REMOVE: width: 320px; */
+    /* REMOVE: max-width: 400px; */
+}
+
+.media-album-art {
+    width: 80px;  /* Made art bigger */
+    height: 80px;
+    border-radius: 8px;
+}
+
+.media-metadata {
+    spacing: 2px;
+    /* Remove align-items and x-expand to let the labels control the width */
+}
+
+.media-music-title {
+    font-weight: bold;
+    font-size: 15px; /* Slightly smaller to fit more text */
+    color: white;
+}
+.media-music-artist {
+    font-size: 12px;
+    color: #cccccc;
+}
+/* Controls Box */
+.media-controls {
+    spacing: 12px; /* Add some nice breathing room between buttons */
+    padding-top: 8px; /* Push buttons slightly away from the artist name */
+    /* Ensure no extra margins are pushing it right */
+    margin-left: 0px; 
+}
+
+/* Make buttons feel a bit bigger/easier to click while keeping icons small */
+.media-play-pause-button,
+.music-next-button,
+.music-previous-button {
+    padding: 6px;
+}
+
+.media-play-pause-button:hover,
+.music-next-button:hover,
+.music-previous-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* This is how you make the buttons smaller */
+.media-play-pause-button StIcon,
+.music-next-button StIcon,
+.music-previous-button StIcon {
+    icon-size: 14px; /* Small, sleek icons */
+}

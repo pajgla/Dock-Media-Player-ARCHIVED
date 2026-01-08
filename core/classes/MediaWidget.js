@@ -1,6 +1,7 @@
 import GObject from "gi://GObject";
 import St from "gi://St";
 import Clutter from "gi://Clutter";
+import Pango from 'gi://Pango';
 
 export const MediaWidget = GObject.registerClass(
     class MediaWidget extends St.BoxLayout
@@ -28,7 +29,8 @@ export const MediaWidget = GObject.registerClass(
                 vertical: false,
                 x_expand: false,
                 y_expand: true,
-                x_align: Clutter.ActorAlign.END,
+                // Change this from END to START
+                x_align: Clutter.ActorAlign.START, 
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -48,16 +50,25 @@ export const MediaWidget = GObject.registerClass(
             })
 
             this._musicArtist = new St.Label({
-                style_class: "music-artist",
-                text: "",
+                style_class: "media-music-artist",
+                text: "Unknown Artist",
                 y_align: Clutter.ActorAlign.CENTER,
             });
+            this._musicArtist.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+            this._musicArtist.clutter_text.min_width = 50;
+            this._musicArtist.clutter_text.max_width = 50;
 
             this._musicTitle = new St.Label({
-                style_class: "music-title",
-                text: "",
+                style_class: "media-music-title",
+                text: "Unknown Title",
                 y_align: Clutter.ActorAlign.CENTER,
             });
+            // Access the internal clutter text
+            this._musicTitle.clutter_text.ellipsize = Pango.EllipsizeMode.END;
+            // This forces a minimum "natural" width so 6-letter songs don't make the widget tiny
+            this._musicTitle.clutter_text.min_width = 50; 
+            // This forces a maximum width so YouTube titles don't make the widget huge
+            this._musicTitle.clutter_text.max_width = 50;
 
             this._musicAlbumArt = new St.Bin({
                 style_class: "music-album-art",
@@ -97,6 +108,7 @@ export const MediaWidget = GObject.registerClass(
 
             this._musicMetadata.add_child(this._musicTitle);
             this._musicMetadata.add_child(this._musicArtist);
+            this._musicMetadata.add_child(this._musicControls);
             this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
 
             this._musicControls.add_child(this._playPauseButton);
@@ -121,7 +133,7 @@ export const MediaWidget = GObject.registerClass(
 
             this.add_child(this._musicAlbumArt);
             this.add_child(this._musicMetadata);
-            this.add_child(this._musicControls);
+            //this.add_child(this._musicControls);
         }
 
         updateUI(metadata, status) {

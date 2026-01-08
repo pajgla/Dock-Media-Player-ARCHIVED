@@ -120,64 +120,49 @@ export default class DockMediaPlayerExtension extends Extension
         this.collapseDashMediaContainer(() => {});
     }
 
-    expandDashMediaContainer()
-    {
-        if (this.dashContainer === null) return;
-
+    expandDashMediaContainer() {
         this._currentStatus = 'expanded';
+        this.dashContainer.show();
 
-        // 1. Reset width to -1 so the layout engine can calculate the actual size
-        this.dashContainer.set_width(-1);
-        
-        // 2. Get the width the widget WANTS to be
-        const [minWidth, naturalWidth] = this.dashContainer.get_preferred_width(-1);
-        
-        // If it still returns 0, give it a fallback so it doesn't stay invisible
-        const targetWidth = naturalWidth > 0 ? naturalWidth : 200;
+        // 1. STOP any running animations immediately to prevent the "fight"
+        this.dashContainer.remove_all_transitions();
 
-        // 3. Set it back to 0 immediately so we can animate from 0
-        this.dashContainer.set_width(0);
-        this.dashContainer.set_opacity(0);
-
+        // 2. IMPORTANT: Give GJS a tiny moment to render the new text 
+        // before we measure the width.
         GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            // 3. Measure natural width now that text is updated
+            let [minWidth, naturalWidth] = this.dashContainer.get_first_child().get_preferred_width(-1);
+
+            // 4. Set a safe range (Floor of 180px, Ceiling of 300px)
+            let targetWidth = Math.min(Math.max(naturalWidth, 180), 300);
+
             this.dashContainer.ease({
                 width: targetWidth,
                 opacity: 255,
                 duration: 300,
                 mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-                onComplete: () => {
-                    // Lock the width after expansion so collapse knows where to start from
-                    this.dashContainer.set_width(targetWidth);
-                }
             });
             return GLib.SOURCE_REMOVE;
         });
     }
 
-    collapseDashMediaContainer(callback)
-    {
-        if (this.dashContainer === null)
-        {
-            console.warn("Dash media container is not initialized.");
-            if (callback) callback();
-            return;
-        }
-
+    collapseDashMediaContainer(callback) {
         this._currentStatus = 'collapsed';
 
-        // Get the current width first
-        const currentWidth = this.dashContainer.width;
+        // 1. STOP any running animations
+        this.dashContainer.remove_all_transitions();
 
-        // Defer the animation just like expand does
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            this.dashContainer.ease({
-                width: 0,
-                opacity: 0,
-                duration: 300,
-                mode: Clutter.AnimationMode.EASE_IN_QUAD,
-                onComplete: callback,
-            });
-            return GLib.SOURCE_REMOVE;
+        this.dashContainer.ease({
+            width: 0,
+            opacity: 0,
+            duration: 300,
+            mode: Clutter.AnimationMode.EASE_IN_QUAD,
+            onComplete: () => {
+                if (this._currentStatus === 'collapsed') {
+                    this.dashContainer.hide();
+                    if (callback) callback();
+                }
+            },
         });
     }
 }
