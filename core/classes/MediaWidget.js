@@ -83,7 +83,6 @@ export const MediaWidget = GObject.registerClass(
             this._musicAlbumArtFallback = new St.Icon({
                 style_class: "music-album-art-fallback",
                 icon_name: "audio-x-generic-symbolic",
-                icon_size: 5,  // Add this!
                 y_align: Clutter.ActorAlign.CENTER,
             });
 
@@ -176,7 +175,6 @@ export const MediaWidget = GObject.registerClass(
                 const fileIcon = new Gio.FileIcon({ file: file });
                 const icon = new St.Icon({
                     gicon: fileIcon,
-                    icon_size: 5,
                     y_align: Clutter.ActorAlign.CENTER,
                 });
 
