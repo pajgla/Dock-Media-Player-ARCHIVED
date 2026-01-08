@@ -49,21 +49,8 @@ export default class DockMediaPlayerExtension extends Extension
         this.dashContainer = new DashContainer();
         this._isVisible = false;
         this._currentStatus = 'expanded';
-        this._mediaWatcher = new MediaWatcher((busName, newStatus) => {
-            if (newStatus === 'Playing' || newStatus === 'Paused')
-            {
-                if (this._currentStatus !== 'expanded')
-                    this.expandDashMediaContainer();
-            }
-            else
-            {
-                if (this._currentStatus !== 'collapsed')
-                {
-                    this.collapseDashMediaContainer(() => {});
-                }
-            }
-
-            Main.notify('Media Status Changed', `New status: ${newStatus}`);
+        this._mediaWatcher = new MediaWatcher((busName, newStatus, trackInfo) => {
+            this.onMediaStatusChange(busName, newStatus, trackInfo);
         });
         this._mediaWatcher.watchPlayers();
         
@@ -99,6 +86,29 @@ export default class DockMediaPlayerExtension extends Extension
 
         this._mediaWatcher.destroy();
         this._mediaWatcher = null;
+    }
+
+    onMediaStatusChange(busName, newStatus, trackInfo)
+    {
+        if (newStatus === 'Playing' || newStatus === 'Paused')
+        {
+            if (this._currentStatus !== 'expanded')
+                this.expandDashMediaContainer();
+
+            if (this.dashContainer && this.dashContainer.mediaPlayerWidget)
+            {
+                this.dashContainer.mediaPlayerWidget.updateUI(trackInfo, newStatus);
+            }
+        }
+        else
+        {
+            if (this._currentStatus !== 'collapsed')
+            {
+                this.collapseDashMediaContainer(() => {});
+            }
+        }
+
+        Main.notify('Media Status Changed', `New status: ${newStatus}`);
     }
 
     attachMediaWidget(dashToDock)

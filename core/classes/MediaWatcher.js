@@ -7,6 +7,7 @@ const mprisInterface = `
 <node>
     <interface name="org.mpris.MediaPlayer2.Player">
         <property name="PlaybackStatus" type="s" access="read"/>
+        <property name="Metadata" type="a{sv}" access="read"/>
     </interface>
 </node>`;
 
@@ -59,8 +60,12 @@ export const MediaWatcher = class MediaWatcher {
                 if (newOwner && !oldOwner) {
                     this.setupPlayerProxy(name);
                 } else if (!newOwner && oldOwner) {
+                    // 1. Notify the extension that this player is gone before deleting
+                    // We use 'Stopped' to trigger your existing collapse logic
+                    this._handleStatusChange(name, 'Stopped'); 
+
+                    // 2. Now delete it from the map
                     this._players.delete(name);
-                    //Main.notify('Dock Media Player', 'Media Player Disconnected');
                 }
             }
         });
@@ -75,32 +80,50 @@ export const MediaWatcher = class MediaWatcher {
             '/org/mpris/MediaPlayer2'
         );
 
-        // Track playback status changes (Play/Pause/Stop)
+        // Store it FIRST so the map lookup doesn't fail
+        this._players.set(busName, proxy);
+
         proxy.connect('g-properties-changed', (p) => {
-            const status = p.PlaybackStatus;
-            this._handleStatusChange(busName, status);
+            this._handleStatusChange(busName, p.PlaybackStatus);
         });
 
-        // Initial check for current status
-        this._handleStatusChange(busName, proxy.PlaybackStatus);
-
-        this._players.set(busName, proxy);
+        // Pass the proxy directly to avoid Map lookup race conditions
+        this._handleStatusChange(busName, proxy.PlaybackStatus, proxy);
     }
 
-    _handleStatusChange(busName, status) {
-        //Main.notify('Dock Media Player', `Status Change Detected: ${status}`);
-        // if (status === 'Playing') {
-        //     Main.notify('Dock Media Player', `Playing: ${busName}`);
-        // } else if (status === 'Paused' || status === 'Stopped') {
-        //     Main.notify('Dock Media Player', `Stopped: ${busName}`);
-        // }
+    _handleStatusChange(busName, status, manualProxy = null) {
+        const proxy = manualProxy || this._players.get(busName);
+        if (!proxy) return;
 
-        if (typeof this._onStatusChange === 'function')
-        {
-            this._onStatusChange(busName, status);
+        let trackInfo = {
+            title: "Unknown Title",
+            artist: "Unknown Artist"
+        };
+
+        // Get the Metadata property variant
+        const metadataVariant = proxy.get_cached_property('Metadata');
+
+        if (metadataVariant) {
+            // recursiveUnpack() converts ALL nested variants to native JS types
+            const unpacked = metadataVariant.recursiveUnpack();
+            
+            // Now 'unpacked' is a standard JS object like: 
+            // { 'xesam:title': 'Song Name', 'xesam:artist': ['Artist A', 'Artist B'] }
+            
+            if (unpacked['xesam:title']) {
+                trackInfo.title = String(unpacked['xesam:title']);
+            }
+
+            if (unpacked['xesam:artist']) {
+                const artist = unpacked['xesam:artist'];
+                // Since xesam:artist is a List of Strings
+                trackInfo.artist = Array.isArray(artist) ? artist.join(', ') : String(artist);
+            }
         }
 
-        this._status = status;
+        if (typeof this._onStatusChange === 'function') {
+            this._onStatusChange(busName, status, trackInfo);
+        }
     }
 
     destroy()

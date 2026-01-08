@@ -103,9 +103,9 @@ export const MediaWidget = GObject.registerClass(
             this._musicControls.add_child(this._nextButton);
             this._musicControls.add_child(this._previousButton);
 
+            this._previousButton.set_child(this.previousIcon);
             this._playPauseButton.set_child(this.playIcon);
             this._nextButton.set_child(this.nextIcon);
-            this._previousButton.set_child(this.previousIcon);
 
             this._playPauseButton.connect("clicked", () => {
                 if (this._player) {
@@ -122,6 +122,18 @@ export const MediaWidget = GObject.registerClass(
             this.add_child(this._musicAlbumArt);
             this.add_child(this._musicMetadata);
             this.add_child(this._musicControls);
+        }
+
+        updateUI(metadata, status) {
+            // Force conversion to string to prevent [object variant] labels
+            this._musicTitle.set_text(String(metadata.title || "Unknown Title"));
+            this._musicArtist.set_text(String(metadata.artist || "Unknown Artist"));
+
+            if (status === 'Playing') {
+                this._playPauseButton.set_child(this.pauseIcon);
+            } else {
+                this._playPauseButton.set_child(this.playIcon);
+            }
         }
     }
 )
