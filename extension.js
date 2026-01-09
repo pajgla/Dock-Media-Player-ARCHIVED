@@ -98,7 +98,8 @@ export default class DockMediaPlayerExtension extends Extension
 
             if (this.dashContainer && this.dashContainer.mediaPlayerWidget)
             {
-                this.dashContainer.mediaPlayerWidget.updateUI(trackInfo, newStatus);
+                this.dashContainer.mediaPlayerWidget.setPlayer(this._mediaWatcher, busName);
+                this.dashContainer.mediaPlayerWidget.updateUI(trackInfo, newStatus, busName);
             }
         }
         else

@@ -162,9 +162,38 @@ export const MediaWidget = GObject.registerClass(
             this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
             this.add_child(this._musicAlbumArt);
             this.add_child(this._rightContainer);
+
+            this._playPauseButton.connect("clicked", () => {
+                if (this._player && this._activeBusName) {
+                    this._player.toggleStatus(this._activeBusName);
+                }
+            });
+
+            this._nextButton.connect("clicked", () => {
+                if (this._player && this._activeBusName)
+                {
+                    this._player.goNext(this._activeBusName);
+                }
+            });
+
+            this._previousButton.connect("clicked", () => {
+                if (this._player && this._activeBusName)
+                {
+                    this._player.goPrevious(this._activeBusName);
+                }
+            });
         }
 
-        updateUI(metadata, status) {
+        setPlayer(player, busName)
+        {
+            this._player = player;
+            this._activeBusName = busName;
+        }
+
+        updateUI(metadata, status, busName) {
+
+            this._activeBusName = busName;
+
             // Force conversion to string to prevent [object variant] labels
             this._musicTitle.set_text(String(metadata.title || "Unknown Title"));
             this._musicArtist.set_text(String(metadata.artist || "Unknown Artist"));

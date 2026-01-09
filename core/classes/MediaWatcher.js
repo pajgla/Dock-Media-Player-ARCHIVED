@@ -6,6 +6,10 @@ import { MediaWatcherStatus } from './MediaWatcherStatus.js';
 const mprisInterface = `
 <node>
     <interface name="org.mpris.MediaPlayer2.Player">
+        <method name="PlayPause"/>
+        <method name="Next"/>
+        <method name="Previous"/>
+        <method name="Stop"/>
         <property name="PlaybackStatus" type="s" access="read"/>
         <property name="Metadata" type="a{sv}" access="read"/>
     </interface>
@@ -128,6 +132,39 @@ export const MediaWatcher = class MediaWatcher {
 
         if (typeof this._onStatusChange === 'function') {
             this._onStatusChange(busName, status, trackInfo);
+        }
+    }
+
+    getProxy(busName)
+    {
+        return this._players.get(busName);
+    }
+
+    toggleStatus(busName) {
+        const proxy = this.getProxy(busName);
+        if (proxy) {
+            // Must match <method name="PlayPause"/> + "Remote"
+            proxy.PlayPauseRemote((result, error) => {
+                if (error) logError(error);
+            });
+        }
+    }
+
+    goNext(busName) {
+        const proxy = this.getProxy(busName);
+        if (proxy) {
+            proxy.NextRemote((result, error) => {
+                if (error) log(`[MediaWatcher] Next error: ${error.message}`);
+            });
+        }
+    }
+
+    goPrevious(busName) {
+        const proxy = this.getProxy(busName);
+        if (proxy) {
+            proxy.PreviousRemote((result, error) => {
+                if (error) log(`[MediaWatcher] Previous error: ${error.message}`);
+            });
         }
     }
 
