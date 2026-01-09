@@ -4,6 +4,7 @@ import Clutter from "gi://Clutter";
 import Pango from 'gi://Pango';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
+import GdkPixbuf from 'gi://GdkPixbuf';
 
 export const MediaWidget = GObject.registerClass(
     class MediaWidget extends St.BoxLayout
@@ -195,6 +196,9 @@ export const MediaWidget = GObject.registerClass(
                     file = Gio.File.new_for_path(artUrl);
                 }
 
+                const bgColor = this._getAverageColor(file);
+                this.set_style(`background-color: ${bgColor};`);
+
                 const fileIcon = new Gio.FileIcon({ file: file });
                 const icon = new St.Icon({
                     gicon: fileIcon,
@@ -205,6 +209,29 @@ export const MediaWidget = GObject.registerClass(
             } catch (e) {
                 logError(e, 'Failed to load album art');
                 this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
+            }
+        }
+
+        _getAverageColor(file) {
+            try {
+                // Load the pixbuf directly from the file path/URI
+                const pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    file.get_path(), 
+                    1, 1, // Scale down to 1x1 immediately
+                    false
+                );
+                
+                const pixels = pixbuf.get_pixels();
+                // In GJS, pixels is a Uint8Array. 
+                // For a 1x1 image, indices 0, 1, and 2 are R, G, and B.
+                const r = pixels[0];
+                const g = pixels[1];
+                const b = pixels[2];
+
+                // Apply a slight transparency so it fits the GNOME Shell aesthetic
+                return `rgba(${r}, ${g}, ${b}, 0.8)`; 
+            } catch (e) {
+                return 'rgba(30, 30, 30, 0.9)'; // Fallback
             }
         }
     }
