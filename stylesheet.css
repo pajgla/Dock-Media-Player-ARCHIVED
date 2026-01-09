@@ -11,23 +11,29 @@
 }
 
 .media-album-art {
-    border-radius: 8px;
+    border-radius: 999px; /* Using a very high value ensures a perfect circle */
+    border: 1px solid transparent; /* The "magic" fix for background clipping */
+    background-size: cover;
+    background-position: center;
+    background-color: #222;
+    /* Ensure no other styles interfere */
+    -st-background-image-shadow: none; 
 }
 
 .media-metadata {
     spacing: 2px;
     margin-right: 8px;
     /* This ensures the box itself stays centered if the widget height changes */
-    vertical-align: middle; 
+    height: auto;
 }
 
 .media-music-title {
     font-weight: bold;
-    font-size: 12px; /* Slightly smaller to fit more text */
+    font-size: 15px; /* Slightly smaller to fit more text */
     color: white;
 }
 .media-music-artist {
-    font-size: 10px;
+    font-size: 12px;
     color: #cccccc;
 }
 
@@ -60,5 +66,5 @@
 .media-play-pause-button StIcon,
 .music-next-button StIcon,
 .music-previous-button StIcon {
-    icon-size: 10px; /* Small, sleek icons */
+    icon-size: 15px; /* Small, sleek icons */
 }

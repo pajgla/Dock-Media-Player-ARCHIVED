@@ -123,14 +123,14 @@ export default class DockMediaPlayerExtension extends Extension
             let [minHeight, naturalHeight] = dash._box.get_preferred_height(-1);
             
             // Make our widget 80% of the dock height (changed from 90%)
-            let targetHeight = Math.floor(naturalHeight * 0.80);
+            let targetHeight = Math.floor(naturalHeight * 0.85);
             
             // Set the height on both containers
             this.dashContainer.set_height(targetHeight);
             this.dashContainer.mediaPlayerWidget.set_height(targetHeight);
             
             // Also update the metadata height to match (minus padding)
-            let metadataHeight = targetHeight - 24; // Subtract padding
+            let metadataHeight = targetHeight - 16; // Subtract padding
             //this.dashContainer.mediaPlayerWidget._musicMetadata.set_height(metadataHeight);
             
             // Set album art to match metadata height
@@ -159,7 +159,7 @@ export default class DockMediaPlayerExtension extends Extension
             let [minWidth, naturalWidth] = this.dashContainer.get_first_child().get_preferred_width(-1);
 
             // 4. Set a safe range (Floor of 180px, Ceiling of 300px)
-            let targetWidth = Math.min(Math.max(naturalWidth, 180), 300);
+            let targetWidth = Math.min(Math.max(naturalWidth, 200), 500);
 
             this.dashContainer.ease({
                 width: targetWidth,
