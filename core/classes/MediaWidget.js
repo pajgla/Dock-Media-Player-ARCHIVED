@@ -4,7 +4,6 @@ import Clutter from "gi://Clutter";
 import Pango from 'gi://Pango';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
-import GdkPixbuf from 'gi://GdkPixbuf';
 
 export const MediaWidget = GObject.registerClass(
     class MediaWidget extends St.BoxLayout
@@ -18,25 +17,11 @@ export const MediaWidget = GObject.registerClass(
                 y_expand: false,
             });
 
-            this._rightSideContainer = new St.BoxLayout({
-                vertical: true,
-                x_expand: true,
-                y_expand: true,
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
-            this._artistControlsRow = new St.BoxLayout({
-                vertical: false,
-                x_expand: true,
-                y_expand: false,
-                y_align: Clutter.ActorAlign.CENTER,
-            });
-
             this._musicMetadata = new St.BoxLayout({
                 style_class: "media-metadata",
                 vertical: true,
                 x_expand: true,
-                y_expand: true,
+                y_expand: false,
                 x_align: Clutter.ActorAlign.START,
                 y_align: Clutter.ActorAlign.CENTER,
             });
@@ -72,8 +57,8 @@ export const MediaWidget = GObject.registerClass(
                 y_align: Clutter.ActorAlign.CENTER,
             });
             this._musicArtist.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-            // this._musicArtist.clutter_text.min_width = 50;
-            // this._musicArtist.clutter_text.max_width = 50;
+            this._musicArtist.clutter_text.min_width = 50;
+            this._musicArtist.clutter_text.max_width = 50;
 
             this._musicTitle = new St.Label({
                 style_class: "media-music-title",
@@ -83,23 +68,14 @@ export const MediaWidget = GObject.registerClass(
             // Access the internal clutter text
             this._musicTitle.clutter_text.ellipsize = Pango.EllipsizeMode.END;
             // This forces a minimum "natural" width so 6-letter songs don't make the widget tiny
-            // this._musicTitle.clutter_text.min_width = 50; 
-            // // This forces a maximum width so YouTube titles don't make the widget huge
-            // this._musicTitle.clutter_text.max_width = 50;
-            //this._musicTitle.y_align = Clutter.ActorAlign.CENTER;
-            //this._musicArtist.y_align = Clutter.ActorAlign.CENTER;
-            
-            this._musicTitle.x_expand = true;
-            this._musicArtist.x_expand = true;
-
-            this._artistControlsRow.add_child(this._musicArtist);
-            this._artistControlsRow.add_child(this._musicControls);
-
-            this._rightSideContainer.add_child(this._musicTitle);
-            this._rightSideContainer.add_child(this._artistControlsRow);
+            this._musicTitle.clutter_text.min_width = 50; 
+            // This forces a maximum width so YouTube titles don't make the widget huge
+            this._musicTitle.clutter_text.max_width = 50;
+            this._musicTitle.y_align = Clutter.ActorAlign.CENTER;
+            this._musicArtist.y_align = Clutter.ActorAlign.CENTER;
 
             this._musicAlbumArt = new St.Bin({
-                style_class: "media-album-art",
+                style_class: "music-album-art",
                 y_align: Clutter.ActorAlign.CENTER,
                 clip_to_allocation: true,
             });
@@ -174,7 +150,6 @@ export const MediaWidget = GObject.registerClass(
                 this._loadAlbumArt(metadata.artUrl);
             } else {
                 // Show fallback icon if no art URL
-                this._musicAlbumArt.set_style(null);
                 this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
             }
 
@@ -197,45 +172,16 @@ export const MediaWidget = GObject.registerClass(
                     file = Gio.File.new_for_path(artUrl);
                 }
 
-                // 1. Get average color and apply it to the main widget background
-                const bgColor = this._getAverageColor(file);
-                this.set_style(`background-color: ${bgColor};`);
+                const fileIcon = new Gio.FileIcon({ file: file });
+                const icon = new St.Icon({
+                    gicon: fileIcon,
+                    y_align: Clutter.ActorAlign.CENTER,
+                });
 
-                // 2. Clear any existing children (like the fallback icon) 
-                // This ensures nothing "square" is sitting on top of your rounded corners.
-                this._musicAlbumArt.set_child(null);
-
-                // 3. Set the image as a background on the 'media-album-art' Bin.
-                // GNOME Shell will correctly clip this background to the border-radius.
-                this._musicAlbumArt.set_style(`
-                    background-image: url("${file.get_uri()}");
-                    background-size: cover;
-                    background-position: center;
-                    border-radius: 999px;
-                    border: 1px solid transparent;
-                `);
-
+                this._musicAlbumArt.set_child(icon);
             } catch (e) {
                 logError(e, 'Failed to load album art');
-                this._musicAlbumArt.set_style(null);
                 this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
-            }
-        }
-
-        _getAverageColor(file) {
-            try {
-                const inputStream = file.read(null);
-                const pixbuf = GdkPixbuf.Pixbuf.new_from_stream(inputStream, null);
-                
-                // Scale to 1x1 to average all pixels
-                const smallPixbuf = pixbuf.scale_simple(1, 1, GdkPixbuf.InterpType.BILINEAR);
-                const pixels = smallPixbuf.get_pixels();
-                
-                // pixels is a Uint8Array [R, G, B, (A)]
-                return `rgb(${pixels[0]}, ${pixels[1]}, ${pixels[2]})`;
-            } catch (e) {
-                logError(e, 'Failed to extract color');
-                return 'rgba(30, 30, 30, 0.9)'; // Fallback color
             }
         }
     }
