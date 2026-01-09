@@ -184,32 +184,72 @@ export const MediaWidget = GObject.registerClass(
             }
         }
 
-        _loadAlbumArt(artUrl) {
+        async _loadAlbumArt(artUrl) {
             try {
                 let file;
-                
-                if (artUrl.startsWith('file://')) {
-                    file = Gio.File.new_for_uri(artUrl);
-                } else if (artUrl.startsWith('http://') || artUrl.startsWith('https://')) {
+                if (artUrl.startsWith('file://') || artUrl.startsWith('http')) {
                     file = Gio.File.new_for_uri(artUrl);
                 } else {
                     file = Gio.File.new_for_path(artUrl);
                 }
 
-                const bgColor = this._getAverageColor(file);
-                this.set_style(`background-color: ${bgColor};`);
-
-                const fileIcon = new Gio.FileIcon({ file: file });
-                const icon = new St.Icon({
-                    gicon: fileIcon,
-                    y_align: Clutter.ActorAlign.CENTER,
+                // 1. Open the file stream asynchronously
+                const inputStream = await new Promise((resolve, reject) => {
+                    file.read_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                        try { resolve(source.read_finish(res)); } catch (e) { reject(e); }
+                    });
                 });
 
-                this._musicAlbumArt.set_child(icon);
+                // 2. Load the Pixbuf from the stream asynchronously
+                const pixbuf = await new Promise((resolve, reject) => {
+                    GdkPixbuf.Pixbuf.new_from_stream_async(inputStream, null, (source, res) => {
+                        try { resolve(GdkPixbuf.Pixbuf.new_from_stream_finish(res)); } catch (e) { reject(e); }
+                    });
+                });
+
+                // 3. Process color and update UI
+                const { r, g, b } = this._calculateAverageRGB(pixbuf);
+                const isDark = this._isColorDark(r, g, b);
+                
+                // Update background and text color contrast
+                this.set_style(`background-color: rgba(${r}, ${g}, ${b}, 0.9);`);
+                const textColor = isDark ? 'white' : '#1a1a1a';
+                const subTextColor = isDark ? '#cccccc' : '#444444';
+
+                this._musicTitle.set_style(`color: ${textColor};`);
+                this._musicArtist.set_style(`color: ${subTextColor};`);
+
+                // Set the icon
+                const fileIcon = new Gio.FileIcon({ file: file });
+                this._musicAlbumArt.set_child(new St.Icon({
+                    gicon: fileIcon,
+                    y_align: Clutter.ActorAlign.CENTER,
+                }));
+
             } catch (e) {
-                logError(e, 'Failed to load album art');
-                this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
+                logError(e, 'Failed to load album art async');
+                this._resetToDefaultStyle();
             }
+        }
+
+        _calculateAverageRGB(pixbuf) {
+            // Scale to 1x1 to get average color
+            const small = pixbuf.scale_simple(1, 1, GdkPixbuf.InterpType.BILINEAR);
+            const pixels = small.get_pixels();
+            return { r: pixels[0], g: pixels[1], b: pixels[2] };
+        }
+
+        _isColorDark(r, g, b) {
+            // Rec. 709 luma coefficients
+            const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+            return luma < 0.5; // Returns true if the color is "dark"
+        }
+
+        _resetToDefaultStyle() {
+            this.set_style('background-color: rgba(30, 30, 30, 0.9);');
+            this._musicTitle.set_style('color: white;');
+            this._musicArtist.set_style('color: #cccccc;');
+            this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
         }
 
         _getAverageColor(file) {
