@@ -6,7 +6,7 @@
 
 .dash-media-player {
     margin-top: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
 }
 
 .media-album-art {
@@ -15,7 +15,7 @@
 
 /* Right container holds title and bottom row */
 .media-right-container {
-    spacing: 4px;
+    spacing: 0px;
     margin-left: 8px;
 }
 
@@ -24,7 +24,6 @@
     font-weight: bold;
     font-size: 12px;
     color: white;
-    y-align: start;
 }
 
 /* Bottom row contains artist and controls side by side */
@@ -36,7 +35,7 @@
 .media-music-artist {
     font-size: 10px;
     color: #cccccc;
-    y-align: start;
+    y-align: center;
 }
 
 /* Controls take right half of bottom row */
@@ -62,5 +61,5 @@
 .media-play-pause-button StIcon,
 .music-next-button StIcon,
 .music-previous-button StIcon {
-    icon-size: 10px; /* Small, sleek icons */
+    icon-size: 12px; /* Small, sleek icons */
 }

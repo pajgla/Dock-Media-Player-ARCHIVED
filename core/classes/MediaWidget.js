@@ -23,27 +23,26 @@ export const MediaWidget = GObject.registerClass(
                 style_class: "media-right-container",
                 vertical: true,
                 x_expand: true,
-                y_expand: false,
-                y_align: Clutter.ActorAlign.CENTER,
+                y_expand: true,
             });
 
             // Title at the top (full width)
             this._musicTitle = new St.Label({
                 style_class: "media-music-title",
                 text: "Unknown Title",
-                y_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.START,
+                y_expand: true,
             });
             this._musicTitle.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-            this._musicTitle.clutter_text.min_width = 50;
-            this._musicTitle.clutter_text.max_width = 50;
+            this._musicTitle.clutter_text.max_width = 150;
 
             // Bottom row: artist on left, controls on right
             this._bottomRow = new St.BoxLayout({
                 style_class: "media-bottom-row",
                 vertical: false,
                 x_expand: true,
-                y_expand: false,
-                y_align: Clutter.ActorAlign.CENTER,
+                y_expand: true,
+                y_align: Clutter.ActorAlign.END,
             });
 
             // Artist label (left half of bottom row)
@@ -54,8 +53,8 @@ export const MediaWidget = GObject.registerClass(
                 x_expand: true,
             });
             this._musicArtist.clutter_text.ellipsize = Pango.EllipsizeMode.END;
-            this._musicArtist.clutter_text.min_width = 50;
             this._musicArtist.clutter_text.max_width = 50;
+            this._musicArtist.clutter_text.min_width = 50;
 
             // Media controls (right half of bottom row)
             this._musicControls = new St.BoxLayout({
@@ -171,10 +170,12 @@ export const MediaWidget = GObject.registerClass(
             this._musicArtist.set_text(String(metadata.artist || "Unknown Artist"));
 
             if (metadata.artUrl) {
-                this._loadAlbumArt(metadata.artUrl);
+                this._loadAlbumArt(metadata.artUrl).catch(err => {
+                    logError(err, 'Error loading album art');
+                    this._resetToDefaultStyle();
+                });
             } else {
-                // Show fallback icon if no art URL
-                this._musicAlbumArt.set_child(this._musicAlbumArtFallback);
+                this._resetToDefaultStyle();
             }
 
             if (status === 'Playing') {
