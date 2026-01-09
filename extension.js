@@ -118,26 +118,17 @@ export default class DockMediaPlayerExtension extends Extension
 
         const dash = dashToDock.dash;
         
-        // Get the actual dock height and calculate widget size
         GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-            let [minHeight, naturalHeight] = dash._box.get_preferred_height(-1);
-            
-            // Make our widget 80% of the dock height (changed from 90%)
-            let targetHeight = Math.floor(naturalHeight * 0.80);
-            
-            // Set the height on both containers
-            this.dashContainer.set_height(targetHeight);
-            this.dashContainer.mediaPlayerWidget.set_height(targetHeight);
-            
-            // Also update the metadata height to match (minus padding)
-            let metadataHeight = targetHeight - 24; // Subtract padding
-            //this.dashContainer.mediaPlayerWidget._musicMetadata.set_height(metadataHeight);
-            
-            // Set album art to match metadata height
-            let artSize = metadataHeight;
-            this.dashContainer.mediaPlayerWidget._musicAlbumArt.set_width(artSize);
-            this.dashContainer.mediaPlayerWidget._musicAlbumArt.set_height(artSize);
-            
+            let [minH, natH] =
+                this.dashContainer.mediaPlayerWidget.get_preferred_height(-1);
+
+            let artSize = Math.max(32, natH - 16);
+
+            this.dashContainer.mediaPlayerWidget._musicAlbumArt.set_size(
+                artSize,
+                artSize
+            );
+
             return GLib.SOURCE_REMOVE;
         });
         
